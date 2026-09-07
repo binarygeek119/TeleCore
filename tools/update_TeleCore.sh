@@ -30,13 +30,34 @@ for tool in curl unzip; do
     fi
 done
 
+CACERT_PEM="/etc/ssl/certs/cacert.pem"
+CACERT_URL="https://curl.se/ca/cacert.pem"
+
+fix_certs() {
+    # Refresh the CA bundle (same fix update_all uses).
+    local RO_ROOT="false"
+    if mount | grep "on / .*[(,]ro[,$]" -q; then
+        RO_ROOT="true"
+        mount / -o remount,rw 2>/dev/null || true
+    fi
+    mkdir -p /etc/ssl/certs 2>/dev/null || true
+    curl --insecure --silent --location -o /tmp/cacert.pem "${CACERT_URL}"
+    if [ -s /tmp/cacert.pem ]; then
+        mv /tmp/cacert.pem "${CACERT_PEM}"
+        export SSL_CERT_FILE="${CACERT_PEM}"
+        sync
+    fi
+    [ "${RO_ROOT}" = "true" ] && mount / -o remount,ro 2>/dev/null || true
+}
+
 download_file() {
     local DOWNLOAD_PATH="$1"
     local DOWNLOAD_URL="$2"
+    local CMD_RET
 
     set +e
     curl ${CURL_SSL:-} --silent --fail --location -o "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}"
-    local CMD_RET=$?
+    CMD_RET=$?
     set -e
 
     case ${CMD_RET} in
@@ -55,12 +76,24 @@ download_file() {
             exit 1
             ;;
         60|77|35|51|58|59|82|83)
-            echo
-            echo "Could not establish a secure connection." >&2
-            echo "There may be a problem with the certificates." >&2
-            echo "Try running with CURL_SSL=--insecure" >&2
-            echo "  CURL_SSL=--insecure $0" >&2
-            exit 1
+            echo "Certificate problem - refreshing CA bundle..."
+            fix_certs
+            set +e
+            curl ${CURL_SSL:-} --silent --fail --location -o "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}"
+            CMD_RET=$?
+            set -e
+            if [ ${CMD_RET} -eq 0 ]; then
+                return
+            fi
+            echo "Still failing - retrying with --insecure..."
+            set +e
+            curl --insecure --silent --fail --location -o "${DOWNLOAD_PATH}" "${DOWNLOAD_URL}"
+            CMD_RET=$?
+            set -e
+            if [ ${CMD_RET} -ne 0 ]; then
+                echo "Download failed even with --insecure (curl exit ${CMD_RET})." >&2
+                exit 1
+            fi
             ;;
         127)
             echo "Error: curl is not installed." >&2
