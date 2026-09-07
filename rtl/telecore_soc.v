@@ -59,6 +59,19 @@ module telecore_soc
 	output [15:0] pb_sd_buff_din,
 	input         pb_sd_buff_wr,
 
+	// Settings NVRAM (S0, settings.nvr image)
+	input         nv_img_mounted,
+	input         nv_img_readonly,
+	input  [63:0] nv_img_size,
+	output [31:0] nv_sd_lba,
+	output        nv_sd_rd,
+	output        nv_sd_wr,
+	input         nv_sd_ack,
+	input  [12:0] nv_sd_buff_addr,
+	input  [15:0] nv_sd_buff_dout,
+	output [15:0] nv_sd_buff_din,
+	input         nv_sd_buff_wr,
+
 	// video
 	input         clk_vga,
 	input  [27:0] clock_rate_vga,
@@ -416,6 +429,16 @@ always @(posedge clk_sys) begin
 	end
 end
 
+// Settings NVRAM pushes loaded/saved CMOS bytes through the same mgmt port;
+// it wins over the boot-time defaults sequencer while it is pushing.
+wire        nv_mgmt_req;
+wire  [7:0] nv_mgmt_addr;
+wire  [7:0] nv_mgmt_wdata;
+
+wire  [7:0] rtc_mgmt_address_f   = nv_mgmt_req ? nv_mgmt_addr   : rtc_mgmt_address;
+wire        rtc_mgmt_write_f     = nv_mgmt_req | rtc_mgmt_write;
+wire  [7:0] rtc_mgmt_writedata_f = nv_mgmt_req ? nv_mgmt_wdata  : rtc_mgmt_writedata;
+
 rtc rtc
 (
 	.clk               (clk_sys),
@@ -428,13 +451,41 @@ rtc rtc
 	.io_write          (iobus_write & rtc_cs),
 	.io_readdata       (rtc_readdata),
 
-	.mgmt_address      (rtc_mgmt_address),
-	.mgmt_write        (rtc_mgmt_write),
-	.mgmt_writedata    (rtc_mgmt_writedata),
+	.mgmt_address      (rtc_mgmt_address_f),
+	.mgmt_write        (rtc_mgmt_write_f),
+	.mgmt_writedata    (rtc_mgmt_writedata_f),
 
 	.bootcfg           (6'd0),
 
 	.irq               (irq[8])
+);
+
+// ---------------------------------------------------------------- Settings NVRAM (S0)
+nvram nvram0
+(
+	.clk              (clk_sys),
+	.reset            (reset),
+
+	.img_mounted      (nv_img_mounted),
+	.img_readonly     (nv_img_readonly),
+	.img_size         (nv_img_size),
+
+	.sd_lba           (nv_sd_lba),
+	.sd_rd            (nv_sd_rd),
+	.sd_wr            (nv_sd_wr),
+	.sd_ack           (nv_sd_ack),
+	.sd_buff_addr     (nv_sd_buff_addr),
+	.sd_buff_dout     (nv_sd_buff_dout),
+	.sd_buff_din      (nv_sd_buff_din),
+	.sd_buff_wr       (nv_sd_buff_wr),
+
+	.cmos_wr          (iobus_write & rtc_cs),
+	.cmos_addr        (iobus_address[0]),
+	.cmos_wdata       (iobus_writedata[7:0]),
+
+	.mgmt_req         (nv_mgmt_req),
+	.mgmt_addr        (nv_mgmt_addr),
+	.mgmt_wdata       (nv_mgmt_wdata)
 );
 
 // ---------------------------------------------------------------- COM1

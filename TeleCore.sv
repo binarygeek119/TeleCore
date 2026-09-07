@@ -162,14 +162,10 @@ hps_io #(.CONF_STR(CONF_STR), .CONF_STR_BRAM(0), .PS2DIV(2000), .PS2WE(1), .WIDE
 	.sd_buff_wr(sd_buff_wr)
 );
 
-// block devices: phase 3 (floppy) / phase 4 (NVRAM/PhoneBook)
-assign sd_lba[0]   = 0;
+// block devices: S0 = settings NVRAM (nvram), S1 = floppy, S2 = PhoneBook
 assign sd_lba[1]   = 0;
-assign sd_rd[0]    = 0;
 assign sd_rd[1]    = 0;
-assign sd_wr[0]    = 0;
 assign sd_wr[1]    = 0;
-assign sd_buff_din[0] = 0;
 assign sd_buff_din[1] = 0;
 
 /////////////////////////////  PLL  ////////////////////////////////////
@@ -459,6 +455,18 @@ telecore_soc soc
 
 	.l1_disable           (status[15]),
 	.l2_disable           (status[15]),
+
+	.nv_img_mounted       (img_mounted[0]),
+	.nv_img_readonly      (img_readonly),
+	.nv_img_size          (img_size),
+	.nv_sd_lba            (sd_lba[0]),
+	.nv_sd_rd             (sd_rd[0]),
+	.nv_sd_wr             (sd_wr[0]),
+	.nv_sd_ack            (sd_ack[0]),
+	.nv_sd_buff_addr      (sd_buff_addr),
+	.nv_sd_buff_dout      (sd_buff_dout),
+	.nv_sd_buff_din       (sd_buff_din[0]),
+	.nv_sd_buff_wr        (sd_buff_wr),
 
 	.pb_img_mounted       (img_mounted[2]),
 	.pb_img_readonly      (img_readonly),

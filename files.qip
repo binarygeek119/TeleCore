@@ -13,6 +13,7 @@ set_global_assignment -name VERILOG_FILE rtl/soc/ps2.v
 set_global_assignment -name VERILOG_FILE rtl/soc/rtc.v
 set_global_assignment -name VERILOG_FILE rtl/soc/vga.v
 set_global_assignment -name VERILOG_FILE rtl/soc/phonebook.v
+set_global_assignment -name VERILOG_FILE rtl/soc/nvram.v
 set_global_assignment -name VERILOG_FILE rtl/rom_loader.v
 set_global_assignment -name VERILOG_FILE rtl/telecore_soc.v
 set_global_assignment -name SDC_FILE TeleCore.sdc
