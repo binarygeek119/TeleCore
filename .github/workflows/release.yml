@@ -1,0 +1,86 @@
+name: Release TeleCore
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-roms:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm python3
+
+      - name: Build BIOS ROMs
+        run: ./tools/build_bios.sh
+
+      - name: Upload ROM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: telecore-roms
+          path: |
+            bios/boot0.rom
+            bios/boot1.rom
+            bios/addon.rom
+            rtl/fallback.hex
+
+  build-core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build core
+        run: docker run --rm -v "$PWD":/build -w /build raetro/quartus:17.0 ./tools/build_core.sh
+
+      - name: Upload core artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: telecore-core
+          path: output_files/
+
+  build-phonebook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build PhoneBook .nvr
+        run: python3 tools/mkphonebook.py -i games/phonebook.json -o games/telecore.nvr
+
+      - name: Upload PhoneBook artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: telecore-phonebook
+          path: games/telecore.nvr
+
+  release:
+    needs: [build-roms, build-core, build-phonebook]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: telecore-*
+
+      - name: Package release zip
+        run: |
+          cd artifacts
+          zip -r ../telecore-release.zip .
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          artifacts: telecore-release.zip
+          generateReleaseNotes: true
