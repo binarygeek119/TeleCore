@@ -28,39 +28,45 @@ jobs:
           fetch_artifact() {
             local workflow="$1"
             local artifact="$2"
-            local run_id
+            local run_id status conclusion pre_id
 
-            run_id=$(gh run list --workflow "$workflow" --limit 20 \
-                --json databaseId,conclusion \
-                -q 'map(select(.conclusion=="success"))[0].databaseId' || true)
+            run_id=$(gh run list --workflow "$workflow" --limit 1 \
+                --json databaseId -q '.[0].databaseId' || true)
 
-            if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-              echo "No successful run for $workflow; dispatching on $TAG..."
-              local pre_id
-              pre_id=$(gh run list --workflow "$workflow" --limit 1 \
-                  --json databaseId -q '.[0].databaseId' || true)
-
-              gh workflow run "$workflow" --ref "$TAG"
-
-              run_id=""
-              for _ in $(seq 1 30); do
-                sleep 5
-                run_id=$(gh run list --workflow "$workflow" --limit 5 \
-                    --json databaseId -q '.[0].databaseId' || true)
-                if [ -n "$run_id" ] && [ "$run_id" != "$pre_id" ] && [ "$run_id" != "null" ]; then
-                  break
-                fi
-              done
-
-              if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-                echo "Could not find new run for $workflow" >&2
-                exit 1
+            if [ -n "$run_id" ] && [ "$run_id" != "null" ]; then
+              status=$(gh run view "$run_id" --json status -q '.status' || true)
+              if [ "$status" = "in_progress" ] || [ "$status" = "queued" ] || [ "$status" = "waiting" ]; then
+                echo "Waiting for in-progress $workflow run $run_id..."
+                gh run watch "$run_id" --exit-status
               fi
-
-              echo "Waiting for $workflow run $run_id..."
-              gh run watch "$run_id" --exit-status
+              conclusion=$(gh run view "$run_id" --json conclusion -q '.conclusion' || true)
+              if [ "$conclusion" = "success" ]; then
+                gh run download "$run_id" -n "$artifact" -D "artifacts/$artifact"
+                return
+              fi
             fi
 
+            echo "No usable run for $workflow; dispatching on $TAG..."
+            pre_id="$run_id"
+            gh workflow run "$workflow" --ref "$TAG"
+
+            run_id=""
+            for _ in $(seq 1 30); do
+              sleep 5
+              run_id=$(gh run list --workflow "$workflow" --limit 5 \
+                  --json databaseId -q '.[0].databaseId' || true)
+              if [ -n "$run_id" ] && [ "$run_id" != "$pre_id" ] && [ "$run_id" != "null" ]; then
+                break
+              fi
+            done
+
+            if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+              echo "Could not find new run for $workflow" >&2
+              exit 1
+            fi
+
+            echo "Waiting for $workflow run $run_id..."
+            gh run watch "$run_id" --exit-status
             gh run download "$run_id" -n "$artifact" -D "artifacts/$artifact"
           }
 
