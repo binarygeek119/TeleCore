@@ -41,7 +41,7 @@ localparam CONF_STR =
 	"TELECORE;UART9600:300:1200:2400:4800:9600:19200:38400:57600:115200,MIDI;",
 	"S0,NVR,Settings NVRAM;",
 	"S1,IMGIMA,Floppy A:;",
-	"S2,NVR,PhoneBook Cartridge;",
+	"S2,PBK,PhoneBook Cartridge;",
 	"O5,Floppy A: Write Protect,Off,On;",
 	"-;",
 	"F2,ROM,ROM Slot 2;",

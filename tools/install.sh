@@ -14,7 +14,7 @@ RBF=$(ls -t "$HERE"/output_files/TeleCore.rbf "$HERE"/releases/*.rbf 2>/dev/null
 
 FILES_CORE="$RBF"
 FILES_GAMES="$HERE/bios/boot0.rom $HERE/bios/boot1.rom"
-[ -f "$HERE/games/telecore.nvr" ] && FILES_GAMES="$FILES_GAMES $HERE/games/telecore.nvr"
+[ -f "$HERE/games/phonebook.pbk" ] && FILES_GAMES="$FILES_GAMES $HERE/games/phonebook.pbk"
 
 case "$DEST" in
   /*)

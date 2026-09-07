@@ -23,13 +23,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build PhoneBook .nvr
-        run: python3 tools/mkphonebook.py -i games/phonebook.json -o games/telecore.nvr
+      - name: Build PhoneBook .pbk
+        run: python3 tools/mkphonebook.py -i games/phonebook.json -o games/phonebook.pbk
 
       - name: Upload PhoneBook artifact
         uses: actions/upload-artifact@v4
         with:
           name: telecore-phonebook
-          path: games/telecore.nvr
+          path: games/phonebook.pbk
 
 

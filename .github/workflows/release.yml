@@ -5,75 +5,68 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
-  build-roms:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y nasm python3
-
-      - name: Build BIOS ROMs
-        run: ./tools/build_bios.sh
-
-      - name: Upload ROM artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: telecore-roms
-          path: |
-            bios/boot0.rom
-            bios/boot1.rom
-            bios/addon.rom
-            rtl/fallback.hex
-
-  build-core:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build core
-        run: docker run --rm -v "$PWD":/build -w /build raetro/quartus:17.0 sh ./tools/build_core.sh
-
-      - name: Upload core artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: telecore-core
-          path: output_files/
-
-  build-phonebook:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build PhoneBook .nvr
-        run: python3 tools/mkphonebook.py -i games/phonebook.json -o games/telecore.nvr
-
-      - name: Upload PhoneBook artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: telecore-phonebook
-          path: games/telecore.nvr
-
   release:
-    needs: [build-roms, build-core, build-phonebook]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          pattern: telecore-*
+      - name: Ensure build artifacts are available
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          mkdir -p artifacts
+
+          TAG="${GITHUB_REF#refs/tags/}"
+
+          fetch_artifact() {
+            local workflow="$1"
+            local artifact="$2"
+            local run_id
+
+            run_id=$(gh run list --workflow "$workflow" --limit 20 \
+                --json databaseId,conclusion \
+                -q 'map(select(.conclusion=="success"))[0].databaseId' || true)
+
+            if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+              echo "No successful run for $workflow; dispatching on $TAG..."
+              local pre_id
+              pre_id=$(gh run list --workflow "$workflow" --limit 1 \
+                  --json databaseId -q '.[0].databaseId' || true)
+
+              gh workflow run "$workflow" --ref "$TAG"
+
+              run_id=""
+              for _ in $(seq 1 30); do
+                sleep 5
+                run_id=$(gh run list --workflow "$workflow" --limit 5 \
+                    --json databaseId -q '.[0].databaseId' || true)
+                if [ -n "$run_id" ] && [ "$run_id" != "$pre_id" ] && [ "$run_id" != "null" ]; then
+                  break
+                fi
+              done
+
+              if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+                echo "Could not find new run for $workflow" >&2
+                exit 1
+              fi
+
+              echo "Waiting for $workflow run $run_id..."
+              gh run watch "$run_id" --exit-status
+            fi
+
+            gh run download "$run_id" -n "$artifact" -D "artifacts/$artifact"
+          }
+
+          fetch_artifact build_roms.yml       telecore-roms
+          fetch_artifact build_core.yml       telecore-core
+          fetch_artifact build_phonebook.yml  telecore-phonebook
 
       - name: Add installer script
         run: |

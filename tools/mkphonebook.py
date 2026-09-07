@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a TeleCore PhoneBook .nvr cartridge image from a JSON list."""
+"""Build a TeleCore PhoneBook .pbk cartridge image from a JSON list."""
 import argparse
 import json
 import os
@@ -52,11 +52,11 @@ def build_phonebook(entries, output_path, size=MAX_IMAGE_SIZE):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build PhoneBook .nvr image")
+    parser = argparse.ArgumentParser(description="Build PhoneBook .pbk image")
     parser.add_argument("-i", "--input", default="games/phonebook.json",
                         help="input JSON file (default: games/phonebook.json)")
-    parser.add_argument("-o", "--output", default="games/telecore.nvr",
-                        help="output .nvr file (default: games/telecore.nvr)")
+    parser.add_argument("-o", "--output", default="games/phonebook.pbk",
+                        help="output .pbk file (default: games/phonebook.pbk)")
     parser.add_argument("-s", "--size", type=int, default=MAX_IMAGE_SIZE,
                         help=f"image size in bytes (default: {MAX_IMAGE_SIZE})")
     args = parser.parse_args()

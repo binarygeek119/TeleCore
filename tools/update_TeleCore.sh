@@ -10,13 +10,25 @@
 #       Installs a release zip that was already copied to the MiSTer.
 #
 # Set CURL_SSL=--insecure to ignore certificate errors.
+# Set DEBUG=1 to print every command as it runs.
 set -e
+
+if [ "${DEBUG:-0}" = "1" ]; then
+    set -x
+fi
 
 MEDIA="/media/fat"
 TMP_DIR="/tmp/telecore_update"
 RELEASE_URL="https://github.com/binarygeek119/TeleCore/releases/latest/download/telecore-release.zip"
 
 ZIP_FILE="${1:-}"
+
+for tool in curl unzip; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "Error: required tool '$tool' is not installed on this MiSTer." >&2
+        exit 1
+    fi
+done
 
 download_file() {
     local DOWNLOAD_PATH="$1"
@@ -30,6 +42,17 @@ download_file() {
     case ${CMD_RET} in
         0)
             return
+            ;;
+        6)
+            echo
+            echo "Could not resolve host. Check the MiSTer network connection." >&2
+            exit 1
+            ;;
+        22)
+            echo
+            echo "Release zip not found at ${DOWNLOAD_URL}." >&2
+            echo "The release may still be building, or the tag has no assets." >&2
+            exit 1
             ;;
         60|77|35|51|58|59|82|83)
             echo
@@ -47,10 +70,26 @@ download_file() {
             ;;
         *)
             echo
-            echo "No internet connection, please try again later." >&2
+            echo "Download failed (curl exit ${CMD_RET})." >&2
+            echo "Check the network connection or transfer a zip manually." >&2
             exit 1
             ;;
     esac
+}
+
+validate_zip() {
+    local ZIP_PATH="$1"
+    if [ ! -s "${ZIP_PATH}" ]; then
+        echo "Error: downloaded file is empty." >&2
+        echo "The release zip may not be published yet." >&2
+        exit 1
+    fi
+    if ! unzip -t "${ZIP_PATH}" >/dev/null 2>&1; then
+        echo "Error: '${ZIP_PATH}' is not a valid zip file." >&2
+        echo "First bytes:" >&2
+        xxd -l 32 "${ZIP_PATH}" >&2 2>/dev/null || head -c 64 "${ZIP_PATH}" >&2
+        exit 1
+    fi
 }
 
 download_release() {
@@ -58,6 +97,7 @@ download_release() {
     mkdir -p "${TMP_DIR}"
     echo "Downloading latest TeleCore release..."
     download_file "${TMP_DIR}/telecore-release.zip" "${RELEASE_URL}"
+    validate_zip "${TMP_DIR}/telecore-release.zip"
 }
 
 if [ -z "${ZIP_FILE}" ]; then
@@ -69,6 +109,7 @@ else
         echo "Usage: $0 [path/to/telecore-release.zip]" >&2
         exit 1
     fi
+    validate_zip "${ZIP_FILE}"
 fi
 
 echo "Extracting..."
@@ -84,7 +125,7 @@ cp "${TMP_DIR}/staging/telecore-roms/bios/boot0.rom"              "${MEDIA}/game
 cp "${TMP_DIR}/staging/telecore-roms/bios/boot1.rom"              "${MEDIA}/games/TeleCore/boot1.rom"
 cp "${TMP_DIR}/staging/telecore-roms/bios/addon.rom"              "${MEDIA}/games/TeleCore/addon.rom"
 cp "${TMP_DIR}/staging/telecore-roms/rtl/fallback.hex"            "${MEDIA}/games/TeleCore/fallback.hex"
-cp "${TMP_DIR}/staging/telecore-phonebook/games/telecore.nvr"     "${MEDIA}/games/TeleCore/telecore.nvr"
+cp "${TMP_DIR}/staging/telecore-phonebook/games/phonebook.pbk"    "${MEDIA}/games/TeleCore/phonebook.pbk"
 
 echo "Cleaning up..."
 rm -rf "${TMP_DIR}"
