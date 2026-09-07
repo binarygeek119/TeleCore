@@ -39,11 +39,13 @@ reg [7:0] sectors_needed;
 reg [7:0] sectors_done;
 reg [6:0] sd_lba_r;
 reg img_mounted_d;
+reg sd_ack_d;
 reg mount_pending;
 reg [15:0] mount_timer;
 reg [16:0] last_img_size;
 
 wire img_mounted_rise = img_mounted && !img_mounted_d;
+wire sd_ack_fall = !sd_ack && sd_ack_d;
 wire size_changed = (img_size[16:0] != last_img_size);
 
 assign sd_lba = {25'd0, sd_lba_r};
@@ -79,6 +81,7 @@ end
 
 always @(posedge clk) begin
 	img_mounted_d <= img_mounted;
+	sd_ack_d <= sd_ack;
 	if (mount_timer != 0) mount_timer <= mount_timer - 16'd1;
 
 	if (img_mounted_rise) begin
