@@ -77,8 +77,8 @@ jobs:
 
       - name: Add installer script
         run: |
-          cp tools/mister_install.sh artifacts/mister_install.sh
-          chmod +x artifacts/mister_install.sh
+          cp tools/update_TeleCore.sh artifacts/update_TeleCore.sh
+          chmod +x artifacts/update_TeleCore.sh
 
       - name: Package release zip
         run: |
