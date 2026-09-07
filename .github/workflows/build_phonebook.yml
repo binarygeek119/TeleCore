@@ -2,7 +2,16 @@ name: Build PhoneBook Cartridge
 
 on:
   push:
-    tags: ['v*']
+    branches: [master, main]
+    paths:
+      - 'games/phonebook.json'
+      - 'tools/mkphonebook.py'
+      - '.github/workflows/build_phonebook.yml'
+  pull_request:
+    paths:
+      - 'games/phonebook.json'
+      - 'tools/mkphonebook.py'
+      - '.github/workflows/build_phonebook.yml'
   workflow_dispatch:
 
 jobs:
@@ -23,11 +32,4 @@ jobs:
           name: telecore-phonebook
           path: games/telecore.nvr
 
-      - name: Add to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: ncipollo/release-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          allowUpdates: true
-          artifacts: "games/telecore.nvr"
-          generateReleaseNotes: true
+

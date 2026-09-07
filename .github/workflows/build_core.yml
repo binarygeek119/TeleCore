@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build core
-        run: docker run --rm -v "$PWD":/build -w /build raetro/quartus:17.0 ./tools/build_core.sh
+        run: docker run --rm -v "$PWD":/build -w /build raetro/quartus:17.0 sh ./tools/build_core.sh
 
       - name: Upload core artifacts
         uses: actions/upload-artifact@v4
