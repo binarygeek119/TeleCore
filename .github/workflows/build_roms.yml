@@ -2,6 +2,8 @@ name: Build BIOS ROMs
 
 on:
   push:
+    branches: [master, main]
+    tags: ['v*']
     paths:
       - 'bios/**'
       - 'tools/build_bios.sh'
@@ -11,10 +13,13 @@ on:
       - 'bios/**'
       - 'tools/build_bios.sh'
       - '.github/workflows/build_roms.yml'
+  workflow_dispatch:
 
 jobs:
   build-roms:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,3 +41,16 @@ jobs:
             bios/boot1.rom
             bios/addon.rom
             rtl/fallback.hex
+
+      - name: Add to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          artifacts: |
+            bios/boot0.rom
+            bios/boot1.rom
+            bios/addon.rom
+            rtl/fallback.hex
+          generateReleaseNotes: true

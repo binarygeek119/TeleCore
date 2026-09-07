@@ -1,0 +1,33 @@
+name: Build PhoneBook Cartridge
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-phonebook:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build PhoneBook .nvr
+        run: python3 tools/mkphonebook.py -i games/phonebook.json -o games/telecore.nvr
+
+      - name: Upload PhoneBook artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: telecore-phonebook
+          path: games/telecore.nvr
+
+      - name: Add to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          artifacts: "games/telecore.nvr"
+          generateReleaseNotes: true

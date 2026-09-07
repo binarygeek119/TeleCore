@@ -1,0 +1,29 @@
+name: Build TeleCore Core
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-core:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build core
+        run: ./tools/build_core.sh
+
+      - name: Add to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          artifacts: |
+            output_files/TeleCore.rbf
+            output_files/TeleCore.sof
+          generateReleaseNotes: true
