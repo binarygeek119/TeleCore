@@ -284,6 +284,9 @@ setup_menu:
 	mov [cur_field], al
 	jmp .sm_loop
 
+.sm_cancel:
+	jmp .sm_done
+
 .sm_inc:
 	call commit_edit
 	call field_ptr			; DI -> table entry, SI -> var
@@ -388,6 +391,20 @@ setup_menu:
 	mov ah, al
 	mov al, 0x0B
 	call cmos_write
+
+	; confirm the save so the user sees it happened
+	mov dx, 0x0C00
+	call gotoxy
+	mov si, msg_setup_saved
+	call puts
+	mov ax, 0x0040
+	mov es, ax
+	mov cx, [es:BDA_TICKS]
+	add cx, 18				; ~1 second
+.sm_wait:
+	mov ax, [es:BDA_TICKS]
+	cmp ax, cx
+	jb .sm_wait
 
 .sm_done:
 	pop ds
@@ -548,3 +565,4 @@ msg_f_sec:   db " Sec  : ",0
 msg_f_ampm:  db " AM/PM: ",0
 msg_am:      db "AM",0
 msg_pm:      db "PM",0
+msg_setup_saved: db "Settings saved to CMOS.",0

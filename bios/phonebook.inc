@@ -215,9 +215,8 @@ find_record:
 	pop bx
 	ret
 
-pb_format:
+pb_format_header:
 	push ax
-	push bx
 	push cx
 	push dx
 	xor ax, ax
@@ -246,9 +245,20 @@ pb_format:
 	call pb_write_byte
 	mov cx, 22
 	xor al, al
-.fmt_pad:
+.fh_pad:
 	call pb_write_byte
-	loop .fmt_pad
+	loop .fh_pad
+	pop dx
+	pop cx
+	pop ax
+	ret
+
+pb_format:
+	push ax
+	push bx
+	push cx
+	push dx
+	call pb_format_header
 	mov bx, PB_HEADER_SIZE
 .fmt_mark:
 	mov ax, bx
@@ -658,6 +668,8 @@ phonebook_menu:
 	je .up
 	cmp ax, 0x5000
 	je .down
+	cmp ax, 0x4300				; F9 = format cartridge
+	je .format
 	cmp al, 0x1B
 	je .exit
 	cmp al, 'q'
@@ -898,6 +910,76 @@ phonebook_menu:
 	call pb_save
 	jmp .main_loop
 
+.format:
+	cmp byte [bp-10], 0
+	jne .readonly
+	call vid_clear_screen
+	mov dx, 0x0C00
+	call gotoxy
+	mov si, msg_pb_fmt_confirm
+	call puts
+	mov ah, 0
+	int 0x16
+	cmp al, 'y'
+	je .fmt_go
+	cmp al, 'Y'
+	je .fmt_go
+	jmp .main_loop
+
+.fmt_go:
+	call pb_format_header
+	xor di, di
+.fmt_loop:
+	cmp di, [bp-4]
+	jae .fmt_done
+	; offset = PB_HEADER_SIZE + di*PB_RECORD_SIZE + PB_FLAGS_OFF
+	mov ax, di
+	mov bx, PB_RECORD_SIZE
+	mul bx
+	add ax, PB_HEADER_SIZE + PB_FLAGS_OFF
+	call pb_seek
+	xor al, al
+	call pb_write_byte
+	; progress = di * 100 / max_records
+	mov ax, di
+	mov bx, 100
+	mul bx
+	mov bx, [bp-4]
+	div bx
+	mov bx, ax
+	mov dx, 0x0E00
+	call gotoxy
+	mov si, msg_pb_fmt_prog
+	call puts
+	mov ax, bx
+	call putdec16
+	mov al, '%'
+	call putc
+	mov al, ' '
+	call putc
+	inc di
+	jmp .fmt_loop
+.fmt_done:
+	mov dx, 0x0E00
+	call gotoxy
+	mov si, msg_pb_fmt_prog
+	call puts
+	mov ax, 100
+	call putdec16
+	mov al, '%'
+	call putc
+	mov dx, 0x0F00
+	call gotoxy
+	mov si, msg_pb_fmt_done
+	call puts
+	mov word [bp-2], 0
+	mov word [bp-6], 0
+	mov word [bp-8], 0
+	call pb_save
+	mov ah, 0
+	int 0x16
+	jmp .main_loop
+
 .dial:
 	cmp word [bp-2], 0
 	je .main_loop
@@ -953,13 +1035,16 @@ msg_pb_title:    db "PhoneBook Cartridge",0
 msg_pb_status:   db "Entries: ",0
 msg_pb_ro:       db "  [READ-ONLY]",0
 msg_pb_rw:       db "  [READ/WRITE]",0
-msg_pb_footer:   db "Up/Down=Move  Enter=Dial  N=New  E=Edit  D=Delete  S=Save  Q=Exit",0
+msg_pb_footer:   db "Up/Down=Move  Enter=Dial  N=New  E=Edit  D=Del  S=Save  F9=Format  Q=Exit",0
 msg_pb_nocart:   db "No PhoneBook cartridge mounted. Press any key.",0
 msg_pb_small:    db "Cartridge too small. Press any key.",0
 msg_pb_name:     db "Name: ",0
 msg_pb_addr:     db "Address: ",0
 msg_pb_baud:     db "Baud (9600): ",0
 msg_pb_format_confirm: db "Invalid header. Format cartridge? (Y/N)",0
+msg_pb_fmt_confirm: db "Format PhoneBook cartridge? ALL ENTRIES WILL BE LOST! (Y/N)",0
+msg_pb_fmt_prog:   db "Formatting... ",0
+msg_pb_fmt_done:   db "Format complete. Press any key.",0
 msg_pb_delete_confirm: db "Delete selected entry? (Y/N)",0
 msg_pb_dialing:  db "Dialing ",0
 msg_pb_at:       db " at ",0
