@@ -120,14 +120,14 @@ unzip -o "${ZIP_FILE}" -d "${TMP_DIR}/staging"
 echo "Installing..."
 mkdir -p "${MEDIA}/_TeleCore" "${MEDIA}/games/TeleCore"
 
-cp "${TMP_DIR}/staging/telecore-core/output_files/TeleCore.rbf"   "${MEDIA}/_TeleCore/TeleCore.rbf"
-cp "${TMP_DIR}/staging/telecore-roms/bios/boot0.rom"              "${MEDIA}/games/TeleCore/boot0.rom"
-cp "${TMP_DIR}/staging/telecore-roms/bios/boot1.rom"              "${MEDIA}/games/TeleCore/boot1.rom"
-cp "${TMP_DIR}/staging/telecore-roms/bios/addon.rom"              "${MEDIA}/games/TeleCore/addon.rom"
-cp "${TMP_DIR}/staging/telecore-roms/rtl/fallback.hex"            "${MEDIA}/games/TeleCore/fallback.hex"
-cp "${TMP_DIR}/staging/telecore-phonebook/games/phonebook.pbk"    "${MEDIA}/games/TeleCore/phonebook.pbk"
-if [ -f "${TMP_DIR}/staging/telecore-settings/games/settings.nvr" ]; then
-    cp "${TMP_DIR}/staging/telecore-settings/games/settings.nvr" "${MEDIA}/games/TeleCore/settings.nvr"
+cp "${TMP_DIR}/staging/TeleCore.rbf"      "${MEDIA}/_TeleCore/TeleCore.rbf"
+cp "${TMP_DIR}/staging/boot0.rom"         "${MEDIA}/games/TeleCore/boot0.rom"
+cp "${TMP_DIR}/staging/boot1.rom"         "${MEDIA}/games/TeleCore/boot1.rom"
+cp "${TMP_DIR}/staging/addon.rom"         "${MEDIA}/games/TeleCore/addon.rom"
+cp "${TMP_DIR}/staging/fallback.hex"      "${MEDIA}/games/TeleCore/fallback.hex"
+cp "${TMP_DIR}/staging/phonebook.pbk"     "${MEDIA}/games/TeleCore/phonebook.pbk"
+if [ -f "${TMP_DIR}/staging/settings.nvr" ]; then
+    cp "${TMP_DIR}/staging/settings.nvr"  "${MEDIA}/games/TeleCore/settings.nvr"
 fi
 
 echo "Cleaning up..."

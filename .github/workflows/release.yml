@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   release:
@@ -16,73 +15,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure build artifacts are available
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
         run: |
-          set -e
-          mkdir -p artifacts
+          sudo apt-get update
+          sudo apt-get install -y nasm python3 zip
 
-          TAG="${GITHUB_REF#refs/tags/}"
+      - name: Build BIOS ROMs
+        run: ./tools/build_bios.sh
 
-          fetch_artifact() {
-            local workflow="$1"
-            local artifact="$2"
-            local run_id status conclusion pre_id
+      - name: Build core
+        run: docker run --rm -v "$PWD":/build -w /build raetro/quartus:17.0 sh ./tools/build_core.sh
 
-            run_id=$(gh run list --workflow "$workflow" --limit 1 \
-                --json databaseId -q '.[0].databaseId' || true)
+      - name: Build PhoneBook .pbk
+        run: python3 tools/mkphonebook.py -i games/phonebook.json -o games/phonebook.pbk
 
-            if [ -n "$run_id" ] && [ "$run_id" != "null" ]; then
-              status=$(gh run view "$run_id" --json status -q '.status' || true)
-              if [ "$status" = "in_progress" ] || [ "$status" = "queued" ] || [ "$status" = "waiting" ]; then
-                echo "Waiting for in-progress $workflow run $run_id..."
-                gh run watch "$run_id" --exit-status
-              fi
-              conclusion=$(gh run view "$run_id" --json conclusion -q '.conclusion' || true)
-              if [ "$conclusion" = "success" ]; then
-                gh run download "$run_id" -n "$artifact" -D "artifacts/$artifact"
-                return
-              fi
-            fi
-
-            echo "No usable run for $workflow; dispatching on $TAG..."
-            pre_id="$run_id"
-            gh workflow run "$workflow" --ref "$TAG"
-
-            run_id=""
-            for _ in $(seq 1 30); do
-              sleep 5
-              run_id=$(gh run list --workflow "$workflow" --limit 5 \
-                  --json databaseId -q '.[0].databaseId' || true)
-              if [ -n "$run_id" ] && [ "$run_id" != "$pre_id" ] && [ "$run_id" != "null" ]; then
-                break
-              fi
-            done
-
-            if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-              echo "Could not find new run for $workflow" >&2
-              exit 1
-            fi
-
-            echo "Waiting for $workflow run $run_id..."
-            gh run watch "$run_id" --exit-status
-            gh run download "$run_id" -n "$artifact" -D "artifacts/$artifact"
-          }
-
-          fetch_artifact build_roms.yml       telecore-roms
-          fetch_artifact build_core.yml       telecore-core
-          fetch_artifact build_phonebook.yml  telecore-phonebook
-          fetch_artifact build_settings.yml   telecore-settings
-
-      - name: Add installer script
-        run: |
-          cp tools/update_TeleCore.sh artifacts/update_TeleCore.sh
-          chmod +x artifacts/update_TeleCore.sh
+      - name: Build Settings .nvr
+        run: python3 tools/mksettings.py -o games/settings.nvr
 
       - name: Package release zip
         run: |
-          cd artifacts
+          mkdir -p staging
+          cp output_files/TeleCore.rbf staging/TeleCore.rbf
+          cp bios/boot0.rom bios/boot1.rom bios/addon.rom staging/
+          cp rtl/fallback.hex staging/
+          cp games/phonebook.pbk games/settings.nvr staging/
+          cp tools/update_TeleCore.sh staging/update_TeleCore.sh
+          chmod +x staging/update_TeleCore.sh
+          cd staging
           zip -r ../telecore-release.zip .
 
       - name: Create GitHub Release
