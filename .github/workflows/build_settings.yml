@@ -1,0 +1,31 @@
+name: Build Settings NVRAM
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'tools/mksettings.py'
+      - '.github/workflows/build_settings.yml'
+  pull_request:
+    paths:
+      - 'tools/mksettings.py'
+      - '.github/workflows/build_settings.yml'
+  workflow_dispatch:
+
+jobs:
+  build-settings:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Settings .nvr
+        run: python3 tools/mksettings.py -o games/settings.nvr
+
+      - name: Upload Settings artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: telecore-settings
+          path: games/settings.nvr

@@ -355,7 +355,7 @@ diskette_param_table:               ; INT 1Eh vector target, 1.44 MB
     times 0xFFF0 - ($ - $$) db 0xFF
 reset_vector:
     jmp 0xF000:bios_entry
-    db "09/07/26"                   ; FFF5h BIOS date
+    db "11/07/89"                   ; FFF5h BIOS date
     db 0x00
     db 0xFC                         ; FFFEh model byte: AT
     db 0x00

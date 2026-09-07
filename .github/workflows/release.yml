@@ -73,6 +73,7 @@ jobs:
           fetch_artifact build_roms.yml       telecore-roms
           fetch_artifact build_core.yml       telecore-core
           fetch_artifact build_phonebook.yml  telecore-phonebook
+          fetch_artifact build_settings.yml   telecore-settings
 
       - name: Add installer script
         run: |

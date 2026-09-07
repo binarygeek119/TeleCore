@@ -126,6 +126,9 @@ cp "${TMP_DIR}/staging/telecore-roms/bios/boot1.rom"              "${MEDIA}/game
 cp "${TMP_DIR}/staging/telecore-roms/bios/addon.rom"              "${MEDIA}/games/TeleCore/addon.rom"
 cp "${TMP_DIR}/staging/telecore-roms/rtl/fallback.hex"            "${MEDIA}/games/TeleCore/fallback.hex"
 cp "${TMP_DIR}/staging/telecore-phonebook/games/phonebook.pbk"    "${MEDIA}/games/TeleCore/phonebook.pbk"
+if [ -f "${TMP_DIR}/staging/telecore-settings/games/settings.nvr" ]; then
+    cp "${TMP_DIR}/staging/telecore-settings/games/settings.nvr" "${MEDIA}/games/TeleCore/settings.nvr"
+fi
 
 echo "Cleaning up..."
 rm -rf "${TMP_DIR}"
