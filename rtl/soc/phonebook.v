@@ -242,8 +242,8 @@ defparam
 	ram_lo.intended_device_family = "Cyclone V",
 	ram_lo.lpm_type = "altsyncram",
 	ram_lo.power_up_uninitialized = "FALSE",
-	ram_lo.read_during_write_mode_port_a = "OLD_DATA",
-	ram_lo.read_during_write_mode_port_b = "OLD_DATA",
+	ram_lo.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
+	ram_lo.read_during_write_mode_port_b = "NEW_DATA_NO_NBE_READ",
 	ram_lo.width_byteena_a = 1,
 	ram_lo.width_byteena_b = 1;
 
@@ -286,8 +286,8 @@ defparam
 	ram_hi.intended_device_family = "Cyclone V",
 	ram_hi.lpm_type = "altsyncram",
 	ram_hi.power_up_uninitialized = "FALSE",
-	ram_hi.read_during_write_mode_port_a = "OLD_DATA",
-	ram_hi.read_during_write_mode_port_b = "OLD_DATA",
+	ram_hi.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
+	ram_hi.read_during_write_mode_port_b = "NEW_DATA_NO_NBE_READ",
 	ram_hi.width_byteena_a = 1,
 	ram_hi.width_byteena_b = 1;
 
