@@ -153,15 +153,30 @@ unzip -o "${ZIP_FILE}" -d "${TMP_DIR}/staging"
 echo "Installing..."
 mkdir -p "${MEDIA}/_TeleCore" "${MEDIA}/games/TeleCore"
 
-cp "${TMP_DIR}/staging/TeleCore.rbf"      "${MEDIA}/_TeleCore/TeleCore.rbf"
-cp "${TMP_DIR}/staging/boot0.rom"         "${MEDIA}/games/TeleCore/boot0.rom"
-cp "${TMP_DIR}/staging/boot1.rom"         "${MEDIA}/games/TeleCore/boot1.rom"
-cp "${TMP_DIR}/staging/addon.rom"         "${MEDIA}/games/TeleCore/addon.rom"
-cp "${TMP_DIR}/staging/fallback.hex"      "${MEDIA}/games/TeleCore/fallback.hex"
-cp "${TMP_DIR}/staging/phonebook.pbk"     "${MEDIA}/games/TeleCore/phonebook.pbk"
-if [ -f "${TMP_DIR}/staging/settings.nvr" ]; then
-    cp "${TMP_DIR}/staging/settings.nvr"  "${MEDIA}/games/TeleCore/settings.nvr"
-fi
+# Layout-agnostic install: works with both the flat zip and the older
+# per-artifact directory layout.
+install_file() {
+    local SRC
+    SRC=$(find "${TMP_DIR}/staging" -name "$1" -type f 2>/dev/null | head -1)
+    if [ -z "${SRC}" ]; then
+        if [ "$3" = "required" ]; then
+            echo "Error: $1 not found in release zip." >&2
+            exit 1
+        fi
+        echo "Skipping $1 (not in release zip)."
+        return
+    fi
+    cp "${SRC}" "$2"
+    echo "  $1 -> $2"
+}
+
+install_file TeleCore.rbf   "${MEDIA}/_TeleCore/TeleCore.rbf"        required
+install_file boot0.rom      "${MEDIA}/games/TeleCore/boot0.rom"      required
+install_file boot1.rom      "${MEDIA}/games/TeleCore/boot1.rom"      required
+install_file addon.rom      "${MEDIA}/games/TeleCore/addon.rom"      required
+install_file fallback.hex   "${MEDIA}/games/TeleCore/fallback.hex"   required
+install_file phonebook.pbk  "${MEDIA}/games/TeleCore/phonebook.pbk"  optional
+install_file settings.nvr   "${MEDIA}/games/TeleCore/settings.nvr"   optional
 
 echo "Cleaning up..."
 rm -rf "${TMP_DIR}"
