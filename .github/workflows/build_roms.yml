@@ -1,0 +1,38 @@
+name: Build BIOS ROMs
+
+on:
+  push:
+    paths:
+      - 'bios/**'
+      - 'tools/build_bios.sh'
+      - '.github/workflows/build_roms.yml'
+  pull_request:
+    paths:
+      - 'bios/**'
+      - 'tools/build_bios.sh'
+      - '.github/workflows/build_roms.yml'
+
+jobs:
+  build-roms:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm python3
+
+      - name: Build BIOS ROMs
+        run: ./tools/build_bios.sh
+
+      - name: Upload ROM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: telecore-roms
+          path: |
+            bios/boot0.rom
+            bios/boot1.rom
+            bios/addon.rom
+            rtl/fallback.hex

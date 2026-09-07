@@ -1,0 +1,169 @@
+--altdpram ACF_BLOCK_RAM_AND_MLAB_EQUIVALENT_PAUSED_READ_CAPABILITIES="CARE" CBX_DECLARE_ALL_CONNECTED_PORTS="OFF" DEVICE_FAMILY="Cyclone V" INDATA_ACLR="OFF" INDATA_REG="INCLOCK" INTENDED_DEVICE_FAMILY="Cyclone V" OUTDATA_ACLR="OFF" OUTDATA_REG="UNREGISTERED" RAM_BLOCK_TYPE="MLAB" RDADDRESS_ACLR="OFF" RDADDRESS_REG="UNREGISTERED" RDCONTROL_ACLR="OFF" RDCONTROL_REG="UNREGISTERED" READ_DURING_WRITE_MODE_MIXED_PORTS="CONSTRAINED_DONT_CARE" WIDTH=2 WIDTH_BYTEENA=1 WIDTHAD=7 WRADDRESS_ACLR="OFF" WRADDRESS_REG="INCLOCK" WRCONTROL_ACLR="OFF" WRCONTROL_REG="INCLOCK" data inclock outclock q rdaddress wraddress wren CARRY_CHAIN="MANUAL" CARRY_CHAIN_LENGTH=48 CYCLONEII_M4K_COMPATIBILITY="ON" LOW_POWER_MODE="NONE"
+--VERSION_BEGIN 17.0 cbx_altdpram 2017:07:13:08:24:32:SJ cbx_altera_syncram 2017:07:13:08:24:32:SJ cbx_altera_syncram_nd_impl 2017:07:13:08:24:32:SJ cbx_altsyncram 2017:07:13:08:24:32:SJ cbx_cycloneii 2017:07:13:08:24:32:SJ cbx_lpm_add_sub 2017:07:13:08:24:32:SJ cbx_lpm_compare 2017:07:13:08:24:32:SJ cbx_lpm_decode 2017:07:13:08:24:32:SJ cbx_lpm_mux 2017:07:13:08:24:32:SJ cbx_mgl 2017:07:13:10:04:39:SJ cbx_nadder 2017:07:13:08:24:32:SJ cbx_stratix 2017:07:13:08:24:32:SJ cbx_stratixii 2017:07:13:08:24:32:SJ cbx_stratixiii 2017:07:13:08:24:32:SJ cbx_stratixv 2017:07:13:08:24:32:SJ cbx_util_mgl 2017:07:13:08:24:32:SJ  VERSION_END
+
+
+-- Copyright (C) 2017  Intel Corporation. All rights reserved.
+--  Your use of Intel Corporation's design tools, logic functions 
+--  and other software and tools, and its AMPP partner logic 
+--  functions, and any output files from any of the foregoing 
+--  (including device programming or simulation files), and any 
+--  associated documentation or information are expressly subject 
+--  to the terms and conditions of the Intel Program License 
+--  Subscription Agreement, the Intel Quartus Prime License Agreement,
+--  the Intel MegaCore Function License Agreement, or other 
+--  applicable license agreement, including, without limitation, 
+--  that your use is for the sole purpose of programming logic 
+--  devices manufactured by Intel and sold by Intel or its 
+--  authorized distributors.  Please refer to the applicable 
+--  agreement for further details.
+
+
+FUNCTION decode_8la (data[1..0], enable)
+RETURNS ( eq[3..0]);
+FUNCTION mux_ifb (data[7..0], sel[1..0])
+RETURNS ( result[1..0]);
+FUNCTION cyclonev_mlab_cell (clk0, clk1, clr, ena0, ena1, ena2, portaaddr[address_width-1..0], portabyteenamasks[byte_enable_mask_width-1..0], portadatain[data_width-1..0], portbaddr[address_width-1..0])
+WITH ( address_width = 1, byte_enable_mask_width = 2, data_width = 1, first_address, first_bit_number, init_file, last_address, logical_ram_depth, logical_ram_name, logical_ram_width, mem_init0, mixed_port_feed_through_mode, port_b_data_out_clear, port_b_data_out_clock)
+RETURNS ( portbdataout[data_width-1..0]);
+
+--synthesis_resources = lut 2 MLAB 4 
+SUBDESIGN dpram_lk22
+( 
+	data[1..0]	:	input;
+	inclock	:	input;
+	outclock	:	input;
+	q[1..0]	:	output;
+	rdaddress[6..0]	:	input;
+	wraddress[6..0]	:	input;
+	wren	:	input;
+) 
+VARIABLE 
+	wr_decode : decode_8la;
+	rd_mux : mux_ifb;
+	lutrama0 : cyclonev_mlab_cell
+		WITH (
+			address_width = 5,
+			data_width = 1,
+			first_address = 0,
+			first_bit_number = 0,
+			last_address = 31,
+			logical_ram_depth = 128,
+			logical_ram_name = "ALTDPRAM_INSTANCE",
+			logical_ram_width = 2,
+			mixed_port_feed_through_mode = "constrained dont care"
+		);
+	lutrama1 : cyclonev_mlab_cell
+		WITH (
+			address_width = 5,
+			data_width = 1,
+			first_address = 0,
+			first_bit_number = 1,
+			last_address = 31,
+			logical_ram_depth = 128,
+			logical_ram_name = "ALTDPRAM_INSTANCE",
+			logical_ram_width = 2,
+			mixed_port_feed_through_mode = "constrained dont care"
+		);
+	lutrama2 : cyclonev_mlab_cell
+		WITH (
+			address_width = 5,
+			data_width = 1,
+			first_address = 32,
+			first_bit_number = 0,
+			last_address = 63,
+			logical_ram_depth = 128,
+			logical_ram_name = "ALTDPRAM_INSTANCE",
+			logical_ram_width = 2,
+			mixed_port_feed_through_mode = "constrained dont care"
+		);
+	lutrama3 : cyclonev_mlab_cell
+		WITH (
+			address_width = 5,
+			data_width = 1,
+			first_address = 32,
+			first_bit_number = 1,
+			last_address = 63,
+			logical_ram_depth = 128,
+			logical_ram_name = "ALTDPRAM_INSTANCE",
+			logical_ram_width = 2,
+			mixed_port_feed_through_mode = "constrained dont care"
+		);
+	lutrama4 : cyclonev_mlab_cell
+		WITH (
+			address_width = 5,
+			data_width = 1,
+			first_address = 64,
+			first_bit_number = 0,
+			last_address = 95,
+			logical_ram_depth = 128,
+			logical_ram_name = "ALTDPRAM_INSTANCE",
+			logical_ram_width = 2,
+			mixed_port_feed_through_mode = "constrained dont care"
+		);
+	lutrama5 : cyclonev_mlab_cell
+		WITH (
+			address_width = 5,
+			data_width = 1,
+			first_address = 64,
+			first_bit_number = 1,
+			last_address = 95,
+			logical_ram_depth = 128,
+			logical_ram_name = "ALTDPRAM_INSTANCE",
+			logical_ram_width = 2,
+			mixed_port_feed_through_mode = "constrained dont care"
+		);
+	lutrama6 : cyclonev_mlab_cell
+		WITH (
+			address_width = 5,
+			data_width = 1,
+			first_address = 96,
+			first_bit_number = 0,
+			last_address = 127,
+			logical_ram_depth = 128,
+			logical_ram_name = "ALTDPRAM_INSTANCE",
+			logical_ram_width = 2,
+			mixed_port_feed_through_mode = "constrained dont care"
+		);
+	lutrama7 : cyclonev_mlab_cell
+		WITH (
+			address_width = 5,
+			data_width = 1,
+			first_address = 96,
+			first_bit_number = 1,
+			last_address = 127,
+			logical_ram_depth = 128,
+			logical_ram_name = "ALTDPRAM_INSTANCE",
+			logical_ram_width = 2,
+			mixed_port_feed_through_mode = "constrained dont care"
+		);
+	datain_wire[1..0]	: WIRE;
+	dataout_wire[1..0]	: WIRE;
+	rdaddr_wire[6..0]	: WIRE;
+	wr_en	: WIRE;
+	wraddr_wire[6..0]	: WIRE;
+
+BEGIN 
+	wr_decode.data[1..0] = wraddr_wire[6..5];
+	wr_decode.enable = wr_en;
+	rd_mux.data[] = ( lutrama[7..0].portbdataout[]);
+	rd_mux.sel[1..0] = rdaddr_wire[6..5];
+	lutrama[7..0].clk0 = inclock;
+	lutrama[7..0].ena0 = ( wr_decode.eq[3..3], wr_decode.eq[3..2], wr_decode.eq[2..1], wr_decode.eq[1..0], wr_decode.eq[0..0]);
+	lutrama[7..0].portaaddr[4..0] = wraddr_wire[4..0];
+	lutrama[0].portadatain[0..0] = datain_wire[0..0];
+	lutrama[1].portadatain[0..0] = datain_wire[1..1];
+	lutrama[2].portadatain[0..0] = datain_wire[0..0];
+	lutrama[3].portadatain[0..0] = datain_wire[1..1];
+	lutrama[4].portadatain[0..0] = datain_wire[0..0];
+	lutrama[5].portadatain[0..0] = datain_wire[1..1];
+	lutrama[6].portadatain[0..0] = datain_wire[0..0];
+	lutrama[7].portadatain[0..0] = datain_wire[1..1];
+	lutrama[7..0].portbaddr[4..0] = rdaddr_wire[4..0];
+	datain_wire[] = data[];
+	dataout_wire[] = rd_mux.result[];
+	q[] = dataout_wire[];
+	rdaddr_wire[] = rdaddress[];
+	wr_en = wren;
+	wraddr_wire[] = wraddress[];
+END;
+--VALID FILE
