@@ -163,10 +163,14 @@ hps_io #(.CONF_STR(CONF_STR), .CONF_STR_BRAM(0), .PS2DIV(2000), .PS2WE(1), .WIDE
 );
 
 // block devices: phase 3 (floppy) / phase 4 (NVRAM/PhoneBook)
-assign sd_lba      = '{0,0,0};
-assign sd_rd       = 0;
-assign sd_wr       = 0;
-assign sd_buff_din = '{0,0,0};
+assign sd_lba[0]   = 0;
+assign sd_lba[1]   = 0;
+assign sd_rd[0]    = 0;
+assign sd_rd[1]    = 0;
+assign sd_wr[0]    = 0;
+assign sd_wr[1]    = 0;
+assign sd_buff_din[0] = 0;
+assign sd_buff_din[1] = 0;
 
 /////////////////////////////  PLL  ////////////////////////////////////
 
